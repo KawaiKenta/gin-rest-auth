@@ -3,15 +3,13 @@ package controllers
 import (
 	"errors"
 	"net/http"
-	"os"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
-	"github.com/golang-jwt/jwt/v4"
-	"github.com/joho/godotenv"
 	"golang.org/x/crypto/bcrypt"
+	"kk-rschain.com/gin-rest-auth/config"
 	"kk-rschain.com/gin-rest-auth/models"
+	"kk-rschain.com/gin-rest-auth/utils"
 )
 
 func SignIn(c *gin.Context) {
@@ -28,43 +26,27 @@ func SignIn(c *gin.Context) {
 	// user取得
 	user, err := models.GetUserByEmail(loginInfo.Email)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"msg": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error()})
 		return
 	}
 
 	// password比較
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(loginInfo.Password)); err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"msg": "Wrong Password"})
+		c.JSON(http.StatusBadRequest, gin.H{"msg": "Wrong Password"})
 		return
 	}
 
-	// TODO: auth serviceへの切り出し
-	// jwt token生成
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"sub": user.ID,
-		"iat": time.Now().Unix(),
-		"exp": time.Now().Add(time.Hour).Unix(),
-	})
-
-	// 環境変数取得
-	if err := godotenv.Load(".env"); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"msg": err})
-		return
-	}
-	secretKey := os.Getenv("JWT_SECRET")
-	if secretKey == "" {
-		c.JSON(http.StatusInternalServerError, gin.H{"msg": "jwt_key is not exist"})
-		return
-	}
-
-	// token暗号化
-	tokenString, err := token.SignedString([]byte(secretKey))
+	// 署名済みtokenを取得
+	tokenString, err := utils.CreateTokenString(user.ID, config.Jwt.ExpirationTime, config.Jwt.Key)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"msg": err})
 		return
 	}
-	// ここまで
-	c.JSON(http.StatusOK, gin.H{"token": tokenString})
+
+	c.JSON(http.StatusOK, gin.H{
+		"token":     tokenString,
+		"user_name": user.Name,
+	})
 }
 
 func SignUp(c *gin.Context) {
@@ -90,8 +72,8 @@ func SignUp(c *gin.Context) {
 		return
 	}
 
-	// TODO: utils folder への切り出し
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(newUserInfo.Password), bcrypt.DefaultCost)
+	// パスワードのハッシュ化
+	hashedPassword, err := utils.EncryptPassword(newUserInfo.Password)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error()})
 		return
@@ -101,7 +83,7 @@ func SignUp(c *gin.Context) {
 	user := models.User{
 		Name:       newUserInfo.Name,
 		Email:      newUserInfo.Email,
-		Password:   string(hashedPassword),
+		Password:   hashedPassword,
 		IsVerified: false,
 	}
 

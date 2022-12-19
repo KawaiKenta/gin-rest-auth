@@ -4,10 +4,12 @@ import (
 	"strconv"
 
 	"golang.org/x/crypto/bcrypt"
+	"kk-rschain.com/gin-rest-auth/config"
 	"kk-rschain.com/gin-rest-auth/models"
 )
 
 func main() {
+	config.Setup()
 	models.Setup()
 	defer models.Close()
 	if err := userSeeds(); err != nil {

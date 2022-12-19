@@ -4,20 +4,21 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"golang.org/x/crypto/bcrypt"
 	"kk-rschain.com/gin-rest-auth/models"
+	"kk-rschain.com/gin-rest-auth/utils"
 )
 
 func GetUserInfo(c *gin.Context) {
 	// ユーザー情報の取得
-	userId, ok := c.Get("userId")
-	if !ok {
-		c.JSON(http.StatusNotFound, gin.H{"msg": "failed to get user from Token"})
+	userId, err := utils.GetUserId(c)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error()})
 		return
 	}
-	user, err := models.GetUserById(userId.(int))
+
+	user, err := models.GetUserById(userId)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"msg": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, user)
@@ -25,32 +26,20 @@ func GetUserInfo(c *gin.Context) {
 
 func DeleteUser(c *gin.Context) {
 	// ユーザーIDの取得
-	userId, ok := c.Get("userId")
-	if !ok {
-		c.JSON(http.StatusNotFound, gin.H{"msg": "failed to get user from Token"})
+	userId, err := utils.GetUserId(c)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error()})
 		return
 	}
 
-	if err := models.DeleteUser(userId.(int)); err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"msg": err.Error()})
+	if err := models.DeleteUser(userId); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error()})
 		return
 	}
 	c.Status(http.StatusNoContent)
 }
 
 func UpdateUser(c *gin.Context) {
-	// ユーザー情報の取得
-	userId, ok := c.Get("userId")
-	if !ok {
-		c.JSON(http.StatusNotFound, gin.H{"msg": "failed to get user from Token"})
-		return
-	}
-	user, err := models.GetUserById(userId.(int))
-	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"msg": err.Error()})
-		return
-	}
-
 	// postされたデータの取得
 	var newUserInfo struct {
 		Name     string `json:"name" binding:"required"`
@@ -60,18 +49,32 @@ func UpdateUser(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"msg": err.Error()})
 		return
 	}
-
-	// TODO: util folder へ切り出し
 	// パスワードのハッシュ化
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(newUserInfo.Password), bcrypt.DefaultCost)
+	hashedPassword, err := utils.EncryptPassword(newUserInfo.Password)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error()})
 		return
 	}
 
-	// データベースへ反映
+	// ユーザーIdの取得
+	userId, err := utils.GetUserId(c)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error()})
+		return
+	}
+
+	// データベースからユーザーの取得
+	user, err := models.GetUserById(userId)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error()})
+		return
+	}
+
+	// user情報の更新
 	user.Name = newUserInfo.Name
-	user.Password = string(hashedPassword)
+	user.Password = hashedPassword
+
+	// データベースへ反映
 	if err := models.UpdateUser(user); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error()})
 		return

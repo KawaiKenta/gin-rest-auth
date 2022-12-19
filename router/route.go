@@ -12,9 +12,9 @@ func InitRoute() *gin.Engine {
 	v1 := router.Group("/v1", middleware.RequireAuth)
 	{
 		// NOTE: requireAuth以下においては userId, ok := c.Get("userId") が使用できる
-		v1.GET("/user", controllers.GetUserInfo)
-		v1.DELETE("/delete", controllers.DeleteUser)
-		v1.POST("/update", controllers.UpdateUser)
+		v1.GET("/user/info", controllers.GetUserInfo)
+		v1.DELETE("/user/delete", controllers.DeleteUser)
+		v1.POST("/user/update", controllers.UpdateUser)
 	}
 	auth := router.Group("/auth")
 	{

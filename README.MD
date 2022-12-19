@@ -7,7 +7,7 @@ golang + gin で作成した REST API サーバー
 - go
 - gin
 - gorm
-- sqlite
+- mysql
 
 ## API
 
@@ -33,8 +33,10 @@ golang + gin で作成した REST API サーバー
 
 ### 1. データベース構築
 
+- mysql のセットアップ
+  cofig.ini と一致するように mysql データベースを作成すること
+
 - マイグレーションを実行
-- gintest.db を作成
 - user テーブルを作成
 
 ```
@@ -56,9 +58,9 @@ go run tools/seeds/seed.go
 go run main.go
 ```
 
-### 3. データベースの削除
+### 3. データベースのテーブルドロップ
 
-- データベースを削除する
+- user テーブルをドロップする
 
 ```
 go run tools/clear/clear.go
@@ -66,8 +68,5 @@ go run tools/clear/clear.go
 
 ## 開発ロードマップ
 
-- [ ] mysql に移行
-- [ ] テーブルの up, down ツールの作成
-- [ ] .env ファイルを作成し、環境情報を切り出す
 - [ ] カスタムバリデーションの実装
-- [ ] ファイル構成の変更 (service 層を作成）
+- [ ] ファイル構成の変更 (pakage にまとめる?)

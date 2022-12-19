@@ -11,8 +11,8 @@ func main() {
 	config.Setup()
 	models.Setup()
 	defer models.Close()
-	models.DB.AutoMigrate(
+	models.DB.Migrator().DropTable(
 		&models.User{},
 	)
-	fmt.Printf("Tables are created in %s\n", config.Database.Name)
+	fmt.Printf("All tables in %s is droped\n", config.Database.Name)
 }
