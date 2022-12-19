@@ -23,11 +23,11 @@ golang + gin で作成した REST API サーバー
 
 - Header に　 Authorization : Bearer {jwt_token}　を持つ時のみアクセス可能
 
-  |                            | メソッド | URI        | JSONdata                                     |
-  | :------------------------- | :------- | :--------- | :------------------------------------------- |
-  | ユーザー情報の取得         | GET      | /v1/user   |                                              |
-  | ユーザーの退会             | DELETE   | /v1/delete |                                              |
-  | ユーザー情報のアップデート | POST     | /v1/update | {"password": "newpassword","name": "kkerew"} |
+  |                            | メソッド | URI             | JSONdata                                     |
+  | :------------------------- | :------- | :-------------- | :------------------------------------------- |
+  | ユーザー情報の取得         | GET      | /v1/user/info   |                                              |
+  | ユーザーの退会             | DELETE   | /v1/user/delete |                                              |
+  | ユーザー情報のアップデート | POST     | /v1/user/update | {"password": "newpassword","name": "kkerew"} |
 
 ## 環境構築
 
@@ -69,4 +69,5 @@ go run tools/clear/clear.go
 ## 開発ロードマップ
 
 - [ ] カスタムバリデーションの実装
+- [ ] エラーハンドリングファイルの作成
 - [ ] ファイル構成の変更 (pakage にまとめる?)
